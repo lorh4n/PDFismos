@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import QtQuick.Pdf
+import QtQuick.Dialogs
 
 ApplicationWindow {
     id: window
@@ -15,6 +16,17 @@ ApplicationWindow {
         sequence: "Esc"
         onActivated: window.panelVisible = false
     }
+    PdfDocument {
+        id: pdfDocument
+    }
+
+    FileDialog {
+        id: pdfFileDialog
+        title: qsTr("Choose a PDF")
+        fileMode: FileDialog.OpenFile
+        nameFilters: ["PDF files (*.pdf)"]
+        onAccepted: pdfDocument.source = selectedFile
+    }
 
 
     header: ToolBar {
@@ -23,28 +35,49 @@ ApplicationWindow {
 
             ToolButton {
                 text: qsTr("Abrir PDF")
-                onClicked: console.log("Abrir PDF Foi clicked")
+                onClicked: {
+                    console.log("Abrir PDF Foi clicked")
+                    pdfFileDialog.open()
+                }
             }
 
             TextField {
+                id: searchField
                 placeholderText: qsTr("Buscar no documento")
                 Layout.fillWidth: true
-                onAccepted: console.log("Busca: " + text)
+                onAccepted: {
+                    if (pdfView.searchModel.count > 0) {
+                        pdfView.searchForward()
+                    }
+                }
             }
+            ToolButton {
+                text: "↑"
+                enabled: pdfView.searchModel.count > 0
+                onClicked: pdfView.searchBack()
+            }
+
+            ToolButton {
+                text: "↓"
+                enabled: pdfView.searchModel.count > 0
+                onClicked: pdfView.searchForward()
+            }
+
 
             ToolButton {
                 text: "-"
                 onClicked: {
-                    if (window.zoomPercent > 50)
-                        window.zoomPercent -= 10
+                    pdfView.renderScale =
+                        Math.max(0.5, pdfView.renderScale - 0.1)
                 }
+
             }
-            Label { text: window.zoomPercent + "%" }
+            Label { text: Math.round(pdfView.renderScale * 100) + "%" }
             ToolButton {
                 text: "+"
                 onClicked: {
-                    if (window.zoomPercent < 200)
-                        window.zoomPercent += 10
+                    pdfView.renderScale =
+                        Math.min(2.0, pdfView.renderScale + 0.1)
                 }
             }
             ToolButton {
@@ -56,7 +89,6 @@ ApplicationWindow {
         }
     }
 
-    property int zoomPercent: 100
     property bool lightMode: Application.styleHints.colorScheme === Qt.Light
     property color reallyDark: "#1f1f1f"
     property color dark: "#262626"
@@ -79,19 +111,50 @@ ApplicationWindow {
 
             ColumnLayout {
                 anchors.fill: parent
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-
+                // Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                 Label {
-                    id: text1
+                    visible: pdfDocument.status === PdfDocument.Null
+                    text: qsTr("Open a PDF to Begin")
                     color: window.lightMode ? window.dark : window.light
-                    font.pixelSize: 36
-                    fontSizeMode: Text.Fit
-                    text: qsTr("Nenhum PDF aberto")
-                    Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.margins: 16
+                    Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
+                }
+
+                Label {
+                    visible: pdfDocument.status === PdfDocument.Loading
+                    text: qsTr("Loading PDF…")
+                    color: window.lightMode ? window.dark : window.light
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                Label {
+                    visible: pdfDocument.status === PdfDocument.Error
+                    text: qsTr("Could not load PDF: %1").arg(pdfDocument.error)
+                    color: window.lightMode ? window.dark : window.light
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                PdfMultiPageView {
+                    id: pdfView
+                    visible: pdfDocument.status === PdfDocument.Ready
+                    document: pdfDocument
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    renderScale: 1.0
+                    onCurrentPageChanged: {
+                        if (currentPage >= 0)
+                            pageNumber.value = currentPage + 1
+                    }
+                    searchString: searchField.text
                 }
             }
         }
@@ -150,6 +213,38 @@ ApplicationWindow {
 
                     onClicked: window.lightMode = !window.lightMode
                 }
+            }
+        }
+    }
+
+    footer: ToolBar {
+        RowLayout {
+            anchors.fill : parent
+
+            Label {
+                text: qsTr("Page")
+            }
+
+            SpinBox {
+                id: pageNumber
+                from : 1
+                to: Math.max(1, pdfDocument.pageCount)
+                value: 1
+                editable: true
+                enabled: pdfDocument.status === PdfDocument.Ready
+                onValueModified: pdfView.goToPage(value - 1)
+            }
+
+            Label {
+                text: qsTr("of %1").arg(pdfDocument.pageCount)
+            }
+
+            Item { Layout.fillWidth: true }
+
+            ToolButton {
+                text: qsTr("Fit Width")
+                enabled: pdfDocument.status === PdfDocument.Ready
+                onClicked: pdfView.scaleToWidth(pdfView.width, pdfView.height)
             }
         }
     }
