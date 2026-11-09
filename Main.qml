@@ -3,8 +3,11 @@ import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import QtQuick.Pdf
 import QtQuick.Dialogs
+import QtCore
+
 
 ApplicationWindow {
+
     id: window
     width: 640
     height: 480
@@ -12,12 +15,37 @@ ApplicationWindow {
     minimumHeight: 250
     visible: true
     title: qsTr("Hello World!!!")
+
+    Settings {
+        id: appSettings
+        property alias lastPdf: pdfDocument.source
+        property int lastPage: 1
+        property alias width: window.width
+        property alias height: window.height
+    }
+
+
     Shortcut {
         sequence: "Esc"
         onActivated: window.panelVisible = false
     }
     PdfDocument {
         id: pdfDocument
+
+        // TODO: resolver issue #2
+        onStatusChanged: function (status){
+            if (status === PdfDocument.Ready) {
+                Qt.callLater(function() {
+                    var targetPage = Math.min(
+                        appSettings.lastPage - 1,
+                        pdfDocument.pageCount - 1
+                    )
+
+                    pdfView.goToPage(Math.max(0, targetPage))
+                    window.restoringLastPage = false
+                })
+            }
+        }
     }
 
     FileDialog {
@@ -25,7 +53,10 @@ ApplicationWindow {
         title: qsTr("Choose a PDF")
         fileMode: FileDialog.OpenFile
         nameFilters: ["PDF files (*.pdf)"]
-        onAccepted: pdfDocument.source = selectedFile
+        onAccepted: {
+            window.restoringLastPage = true
+            pdfDocument.source = selectedFile
+        }
     }
 
 
@@ -95,12 +126,11 @@ ApplicationWindow {
     property color reallyLight: "#e7e7e7"
     property color light: "#e0e0e0"
     property bool panelVisible: true
+    property bool restoringLastPage: true
 
-    GridLayout {
+    RowLayout {
         id: grid
-        columns: width < 400 || !window.panelVisible ? 1 : 2
-        rowSpacing: 0
-        columnSpacing: 0
+        spacing: 0
         anchors.fill: parent
 
         Rectangle {
@@ -150,70 +180,29 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     renderScale: 1.0
+                    // TODO: resolver issue #2
                     onCurrentPageChanged: {
-                        if (currentPage >= 0)
+                        if (currentPage >= 0) {
                             pageNumber.value = currentPage + 1
+
+                            if (!window.restoringLastPage)
+                                appSettings.lastPage = currentPage + 1
+                        }
                     }
                     searchString: searchField.text
                 }
             }
         }
 
-        Rectangle {
-            id: rectangle2
-            color: window.lightMode ? window.light : window.dark
-            Layout.fillHeight: true
-            Layout.fillWidth: true
+        NotesPanel {
+            selectedText: pdfView.selectedText
+            pdfViewer: pdfView
+            textColor: window.lightMode ? window.dark : window.light
+            lightMode: window.lightMode
+            light: window.light
+            dark: window.dark
             visible: window.panelVisible
-
-            ColumnLayout {
-                anchors.fill: parent
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-
-                Label {
-                    text: qsTr("Notas e tradução")
-                    color: window.lightMode ? window.dark : window.light
-                    font.pixelSize: 24
-                    Layout.fillWidth: true
-                    Layout.margins: 16
-                }
-
-                Label {
-                    text: qsTr("As notas e traduções aparecerão aqui.")
-                    color: window.lightMode ? window.dark : window.light
-                    wrapMode: Text.WordWrap
-                    Layout.fillWidth: true
-                    Layout.leftMargin: 16
-                    Layout.rightMargin: 16
-                }
-
-                Item { Layout.fillHeight: true }
-
-                Button {
-                    id: button1
-                    text: window.lightMode ? qsTr("\u263D  Dark mode")
-                                           : qsTr("\u263C  Light mode")
-                    Layout.bottomMargin: 16
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
-
-                    contentItem: Text {
-                        text: button1.text
-                        color: window.lightMode ? window.light : window.dark
-                        font: button1.font
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
-                    background: Rectangle {
-                        implicitWidth: 120
-                        implicitHeight: 36
-                        radius: 8
-                        color: window.lightMode ? window.dark : window.light
-                    }
-
-                    onClicked: window.lightMode = !window.lightMode
-                }
-            }
+            onThemeToggleRequested: window.lightMode = !window.lightMode
         }
     }
 

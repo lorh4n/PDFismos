@@ -1,10 +1,13 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QSettings>
 
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
 
+    QCoreApplication::setOrganizationName("Estudismos");
+    QCoreApplication::setApplicationName("PDFismos");
     QQmlApplicationEngine engine;
     QObject::connect(
         &engine,
