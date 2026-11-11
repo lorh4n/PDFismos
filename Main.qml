@@ -14,6 +14,8 @@ ApplicationWindow {
     minimumWidth: 200
     minimumHeight: 250
     visible: true
+    flags: Qt.Window | Qt.FramelessWindowHint
+    color: "transparent"
     title: qsTr("Hello World!!!")
 
     palette.window: lightMode ? Theme.background : reallyDark
@@ -75,60 +77,68 @@ ApplicationWindow {
         }
     }
 
-    header: ToolBar {
-        visible: !window.showLibrary
+    header: ColumnLayout {
 
-        RowLayout {
-            anchors.fill: parent
+        TitleBar {
+            Layout.fillWidth: true
+            appWindow: window
+        }
 
-            ToolButton {
-                text: qsTr("Abrir PDF")
-                onClicked: {
-                    console.log("Abrir PDF Foi clicked");
-                    pdfFileDialog.open();
-                }
-            }
+        ToolBar {
+            visible: !window.showLibrary
 
-            TextField {
-                id: searchField
-                placeholderText: qsTr("Buscar no documento")
-                Layout.fillWidth: true
-                onAccepted: {
-                    if (pdfView.searchModel.count > 0) {
-                        pdfView.searchForward();
+            RowLayout {
+                anchors.fill: parent
+
+                ToolButton {
+                    text: qsTr("Abrir PDF")
+                    onClicked: {
+                        console.log("Abrir PDF Foi clicked");
+                        pdfFileDialog.open();
                     }
                 }
-            }
-            ToolButton {
-                text: "↑"
-                enabled: pdfView.searchModel.count > 0
-                onClicked: pdfView.searchBack()
-            }
 
-            ToolButton {
-                text: "↓"
-                enabled: pdfView.searchModel.count > 0
-                onClicked: pdfView.searchForward()
-            }
+                TextField {
+                    id: searchField
+                    placeholderText: qsTr("Buscar no documento")
+                    Layout.fillWidth: true
+                    onAccepted: {
+                        if (pdfView.searchModel.count > 0) {
+                            pdfView.searchForward();
+                        }
+                    }
+                }
+                ToolButton {
+                    text: "↑"
+                    enabled: pdfView.searchModel.count > 0
+                    onClicked: pdfView.searchBack()
+                }
 
-            ToolButton {
-                text: "-"
-                onClicked: {
-                    pdfView.renderScale = Math.max(0.5, pdfView.renderScale - 0.1);
+                ToolButton {
+                    text: "↓"
+                    enabled: pdfView.searchModel.count > 0
+                    onClicked: pdfView.searchForward()
                 }
-            }
-            Label {
-                text: Math.round(pdfView.renderScale * 100) + "%"
-            }
-            ToolButton {
-                text: "+"
-                onClicked: {
-                    pdfView.renderScale = Math.min(2.0, pdfView.renderScale + 0.1);
+
+                ToolButton {
+                    text: "-"
+                    onClicked: {
+                        pdfView.renderScale = Math.max(0.5, pdfView.renderScale - 0.1);
+                    }
                 }
-            }
-            ToolButton {
-                text: window.panelVisible ? qsTr("Ocultar painel") : qsTr("Mostrar painel")
-                onClicked: window.panelVisible = !window.panelVisible
+                Label {
+                    text: Math.round(pdfView.renderScale * 100) + "%"
+                }
+                ToolButton {
+                    text: "+"
+                    onClicked: {
+                        pdfView.renderScale = Math.min(2.0, pdfView.renderScale + 0.1);
+                    }
+                }
+                ToolButton {
+                    text: window.panelVisible ? qsTr("Ocultar painel") : qsTr("Mostrar painel")
+                    onClicked: window.panelVisible = !window.panelVisible
+                }
             }
         }
     }
@@ -147,15 +157,11 @@ ApplicationWindow {
     onShowLibraryChanged: window.restorePageIfReady()
 
     function restorePageIfReady() {
-        if (window.pendingPageIndex < 0 || window.showLibrary
-                || pdfDocument.status !== PdfDocument.Ready
-                || pdfView.width <= 0 || pdfView.height <= 0)
+        if (window.pendingPageIndex < 0 || window.showLibrary || pdfDocument.status !== PdfDocument.Ready || pdfView.width <= 0 || pdfView.height <= 0)
             return;
 
         Qt.callLater(function () {
-            if (window.pendingPageIndex < 0 || window.showLibrary
-                    || pdfDocument.status !== PdfDocument.Ready
-                    || pdfView.width <= 0 || pdfView.height <= 0)
+            if (window.pendingPageIndex < 0 || window.showLibrary || pdfDocument.status !== PdfDocument.Ready || pdfView.width <= 0 || pdfView.height <= 0)
                 return;
 
             const targetPage = Math.min(window.pendingPageIndex, pdfDocument.pageCount - 1);
@@ -169,6 +175,7 @@ ApplicationWindow {
         id: libraryPage
         anchors.fill: parent
         visible: window.showLibrary
+        cornerRadius: window.visibility === Window.Windowed ? 18 : 0
         onOpenPdfRequested: pdfFileDialog.open()
         onDocumentSelected: function (fileUrl) {
             window.restoringLastPage = true;

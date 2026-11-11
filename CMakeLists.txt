@@ -29,6 +29,7 @@ qt_add_qml_module(appPDFismos
     QML_FILES
         Main.qml
         NotesPanel.qml
+        TitleBar.qml
         ui/Theme.qml
         ui/pages/LibraryPage.qml
 )

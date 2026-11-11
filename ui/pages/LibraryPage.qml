@@ -10,6 +10,8 @@ Rectangle {
     signal openPdfRequested
     signal documentSelected(fileUrl: url)
 
+    property real cornerRadius: 18
+    radius: cornerRadius
     property var documents: []
 
     Component.onCompleted: libraryPage.documents = library.documents()
@@ -38,7 +40,7 @@ Rectangle {
             model: libraryPage.documents
 
             delegate: Rectangle {
-               id: documentCard
+                id: documentCard
                 required property var modelData
 
                 width: 170
