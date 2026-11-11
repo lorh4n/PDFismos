@@ -4,7 +4,7 @@ project(PDFismos VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Pdf)
+find_package(Qt6 REQUIRED COMPONENTS Quick Pdf Sql)
 
 qt_standard_project_setup(REQUIRES 6.10)
 
@@ -15,6 +15,7 @@ endif()
 
 qt_add_executable(appPDFismos
     main.cpp
+    storage/LibraryDatabase.cpp
 )
 
 qt_add_qml_module(appPDFismos
@@ -38,6 +39,7 @@ set_target_properties(appPDFismos PROPERTIES
 target_link_libraries(appPDFismos
     PRIVATE Qt6::Quick
     PRIVATE Qt6::Pdf
+    PRIVATE Qt6::Sql
 )
 
 install(TARGETS appPDFismos

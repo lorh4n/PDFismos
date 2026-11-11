@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Qt: configurar Debug",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "-S", "${workspaceFolder}",
+                "-B", "${workspaceFolder}/build/vscode-debug",
+                "-G", "Ninja",
+                "-DCMAKE_BUILD_TYPE=Debug",
+                "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+                "-DCMAKE_PREFIX_PATH=${env:HOME}/Qt/6.12.0/gcc_64"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Qt: compilar Debug",
+            "type": "process",
+            "command": "cmake",
+            "args": ["--build", "${workspaceFolder}/build/vscode-debug"],
+            "dependsOn": "Qt: configurar Debug",
+            "group": {"kind": "build", "isDefault": true},
+            "problemMatcher": "$gcc"
+        }
+    ]
+}
