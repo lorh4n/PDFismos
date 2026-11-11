@@ -7,15 +7,17 @@
 #include <QSqlQuery>
 #include <QDir>
 #include <QStandardPaths>
+#include <QQmlContext>
 
 #include "storage/LibraryDatabase.h"
+#include "storage/LibraryController.h"
 
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
 
     QCoreApplication::setOrganizationName("Estudismos");
     QCoreApplication::setApplicationName("PDFismos");
-    QQmlApplicationEngine engine;
+
     qDebug() << "Driver SQLite disponível?"
              << QSqlDatabase::isDriverAvailable("QSQLITE");
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
@@ -32,6 +34,11 @@ int main(int argc, char *argv[]) {
     } else if (!initializeLibrarySchema(db)) {
         qWarning() << "Erro ao preparar a biblioteca.";
     }
+
+    LibraryController libraryController(db);
+
+    QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("library", &libraryController);
 
     QObject::connect(
         &engine, &QQmlApplicationEngine::objectCreationFailed, &app,

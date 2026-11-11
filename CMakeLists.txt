@@ -16,6 +16,8 @@ endif()
 qt_add_executable(appPDFismos
     main.cpp
     storage/LibraryDatabase.cpp
+    storage/LibraryController.h
+    storage/LibraryController.cpp
 )
 
 qt_add_qml_module(appPDFismos

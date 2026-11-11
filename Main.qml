@@ -5,9 +5,7 @@ import QtQuick.Pdf
 import QtQuick.Dialogs
 import QtCore
 
-
 ApplicationWindow {
-
     id: window
     width: 640
     height: 480
@@ -24,7 +22,6 @@ ApplicationWindow {
         property alias height: window.height
     }
 
-
     Shortcut {
         sequence: "Esc"
         onActivated: window.panelVisible = false
@@ -33,17 +30,20 @@ ApplicationWindow {
         id: pdfDocument
 
         // TODO: resolver issue #2
-        onStatusChanged: function (status){
+        onStatusChanged: function (status) {
             if (status === PdfDocument.Ready) {
-                Qt.callLater(function() {
-                    var targetPage = Math.min(
-                        appSettings.lastPage - 1,
-                        pdfDocument.pageCount - 1
-                    )
+                var documentId = library.registerDocument(pdfDocument.source);
 
-                    pdfView.goToPage(Math.max(0, targetPage))
-                    window.restoringLastPage = false
-                })
+                if (documentId >= 0) {
+                    console.log("Documento registrado. ID: ", documentId);
+                }
+
+                Qt.callLater(function () {
+                    var targetPage = Math.min(appSettings.lastPage - 1, pdfDocument.pageCount - 1);
+
+                    pdfView.goToPage(Math.max(0, targetPage));
+                    window.restoringLastPage = false;
+                });
             }
         }
     }
@@ -54,11 +54,10 @@ ApplicationWindow {
         fileMode: FileDialog.OpenFile
         nameFilters: ["PDF files (*.pdf)"]
         onAccepted: {
-            window.restoringLastPage = true
-            pdfDocument.source = selectedFile
+            window.restoringLastPage = true;
+            pdfDocument.source = selectedFile;
         }
     }
-
 
     header: ToolBar {
         RowLayout {
@@ -67,8 +66,8 @@ ApplicationWindow {
             ToolButton {
                 text: qsTr("Abrir PDF")
                 onClicked: {
-                    console.log("Abrir PDF Foi clicked")
-                    pdfFileDialog.open()
+                    console.log("Abrir PDF Foi clicked");
+                    pdfFileDialog.open();
                 }
             }
 
@@ -78,7 +77,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 onAccepted: {
                     if (pdfView.searchModel.count > 0) {
-                        pdfView.searchForward()
+                        pdfView.searchForward();
                     }
                 }
             }
@@ -94,27 +93,23 @@ ApplicationWindow {
                 onClicked: pdfView.searchForward()
             }
 
-
             ToolButton {
                 text: "-"
                 onClicked: {
-                    pdfView.renderScale =
-                        Math.max(0.5, pdfView.renderScale - 0.1)
+                    pdfView.renderScale = Math.max(0.5, pdfView.renderScale - 0.1);
                 }
-
             }
-            Label { text: Math.round(pdfView.renderScale * 100) + "%" }
+            Label {
+                text: Math.round(pdfView.renderScale * 100) + "%"
+            }
             ToolButton {
                 text: "+"
                 onClicked: {
-                    pdfView.renderScale =
-                        Math.min(2.0, pdfView.renderScale + 0.1)
+                    pdfView.renderScale = Math.min(2.0, pdfView.renderScale + 0.1);
                 }
             }
             ToolButton {
-                text: window.panelVisible
-                      ? qsTr("Ocultar painel")
-                      : qsTr("Mostrar painel")
+                text: window.panelVisible ? qsTr("Ocultar painel") : qsTr("Mostrar painel")
                 onClicked: window.panelVisible = !window.panelVisible
             }
         }
@@ -183,10 +178,10 @@ ApplicationWindow {
                     // TODO: resolver issue #2
                     onCurrentPageChanged: {
                         if (currentPage >= 0) {
-                            pageNumber.value = currentPage + 1
+                            pageNumber.value = currentPage + 1;
 
                             if (!window.restoringLastPage)
-                                appSettings.lastPage = currentPage + 1
+                                appSettings.lastPage = currentPage + 1;
                         }
                     }
                     searchString: searchField.text
@@ -208,7 +203,7 @@ ApplicationWindow {
 
     footer: ToolBar {
         RowLayout {
-            anchors.fill : parent
+            anchors.fill: parent
 
             Label {
                 text: qsTr("Page")
@@ -216,7 +211,7 @@ ApplicationWindow {
 
             SpinBox {
                 id: pageNumber
-                from : 1
+                from: 1
                 to: Math.max(1, pdfDocument.pageCount)
                 value: 1
                 editable: true
@@ -228,7 +223,9 @@ ApplicationWindow {
                 text: qsTr("of %1").arg(pdfDocument.pageCount)
             }
 
-            Item { Layout.fillWidth: true }
+            Item {
+                Layout.fillWidth: true
+            }
 
             ToolButton {
                 text: qsTr("Fit Width")
@@ -237,5 +234,4 @@ ApplicationWindow {
             }
         }
     }
-
 }

@@ -66,19 +66,37 @@ bool initializeLibrarySchema(QSqlDatabase &db) {
     return true;
 }
 
-qint64 addDocument(QSqlDatabase &db, const QString &filePath, const QString &title) {
-   QSqlQuery query(db);
+qint64 addDocument(QSqlDatabase &db, const QString &filePath,
+                   const QString &title) {
+    QSqlQuery query(db);
 
-   query.prepare(
-      "INSERT INTO documents (file_path, title) "
-      "VALUES (:file_path, :title)");
-   query.bindValue(":file_path", filePath);
-   query.bindValue(":title", title);
+    if (!query.prepare("INSERT INTO documents (file_path, title) "
+                       "VALUES (:file_path, :title) "
+                       "ON CONFLICT(file_path) DO NOTHING")) {
+        qWarning() << query.lastError().text();
+        return -1;
+    }
+    query.bindValue(":file_path", filePath);
+    query.bindValue(":title", title);
 
-   if (!query.exec()) {
-      qWarning() << "Erro ao cadastrar PDF: " << query.lastError().text();
-      return -1;
-   }
+    if (!query.exec()) {
+        qWarning() << "Erro ao cadastrar PDF: " << query.lastError().text();
+        return -1;
+    }
 
-   return query.lastInsertId().toLongLong();
+    if (!query.prepare(
+            "SELECT id FROM documents WHERE file_path = :file_path")) {
+        qWarning() << query.lastError().text();
+        return -1;
+    }
+
+    query.bindValue(":file_path", filePath);
+
+    if (!query.exec() || !query.next()) {
+        qWarning() << "Erro ao consultar o ID do PDF:"
+                   << query.lastError().text();
+        return -1;
+    }
+
+    return query.value(0).toLongLong();
 }
