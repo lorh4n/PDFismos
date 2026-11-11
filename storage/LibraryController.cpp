@@ -5,11 +5,9 @@
 #include <QDebug>
 #include <QFileInfo>
 
-
 LibraryController::LibraryController(const QSqlDatabase &db) : m_db(db) {}
 
-qint64 LibraryController::registerDocument(const QUrl &source)
-{
+qint64 LibraryController::registerDocument(const QUrl &source) {
     if (!source.isLocalFile()) {
         qWarning() << "O documento precisa ser um arquivo local.";
         return -1;
@@ -24,9 +22,14 @@ qint64 LibraryController::registerDocument(const QUrl &source)
     }
 
     return addDocument(m_db, filePath, fileInfo.fileName());
-} 
+}
 
-QVariantList LibraryController::documents()
-{
-    return listDocuments(m_db);
+QVariantList LibraryController::documents() { return listDocuments(m_db); }
+
+bool LibraryController::saveReadingProgress(qint64 documentId, int pageIndex) {
+    return saveDocumentProgress(m_db, documentId, pageIndex);
+}
+
+int LibraryController::readingProgress(qint64 documentId) {
+    return loadDocumentProgress(m_db, documentId);
 }

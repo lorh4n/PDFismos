@@ -114,11 +114,64 @@ QVariantList listDocuments(QSqlDatabase &db) {
     }
 
     while (query.next()) {
+        const QString filePath = query.value(1).toString();
+
         QVariantMap document;
         document.insert("title", query.value(0).toString());
-        document.insert("filePath", query.value(1).toString());
+        document.insert("filePath", filePath);
+        document.insert("fileUrl", QUrl::fromLocalFile(filePath));
         documents.append(document);
     }
 
     return documents;
+}
+
+bool saveDocumentProgress(QSqlDatabase &db, qint64 documentId, int pageIndex) {
+    if (documentId < 0 || pageIndex < 0)
+        return false;
+
+    QSqlQuery query(db);
+
+    if (!query.prepare("INSERT INTO reading_progress (document_id, page_index) "
+                       "VALUES (:document_id, :page_index) "
+                       "ON CONFLICT(document_id) DO UPDATE SET "
+                       "page_index = excluded.page_index, "
+                       "updated_at = CURRENT_TIMESTAMP")) {
+        qWarning() << "Erro ao preparar o progresso:"
+                   << query.lastError().text();
+        return false;
+    }
+
+    query.bindValue(":document_id", documentId);
+    query.bindValue(":page_index", pageIndex);
+
+    if (!query.exec()) {
+        qWarning() << "Erro ao salvar o progresso:" << query.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+int loadDocumentProgress(QSqlDatabase &db, qint64 documentId) {
+    QSqlQuery query(db);
+
+    if (!query.prepare("SELECT page_index FROM reading_progress "
+                       "WHERE document_id = :document_id")) {
+        qWarning() << "Erro ao preparar a leitura do progresso:"
+                   << query.lastError().text();
+        return 0;
+    }
+
+    query.bindValue(":document_id", documentId);
+
+    if (!query.exec()) {
+        qWarning() << "Erro ao ler o progresso:" << query.lastError().text();
+        return 0;
+    }
+
+    if (!query.next())
+        return 0;
+
+    return query.value(0).toInt();
 }

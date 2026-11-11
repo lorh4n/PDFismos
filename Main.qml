@@ -35,7 +35,6 @@ ApplicationWindow {
     Settings {
         id: appSettings
         property alias lastPdf: pdfDocument.source
-        property int lastPage: 1
         property alias width: window.width
         property alias height: window.height
         property alias theme: window.lightMode
@@ -51,18 +50,13 @@ ApplicationWindow {
         // TODO: resolver issue #2
         onStatusChanged: function (status) {
             if (status === PdfDocument.Ready) {
-                const  documentId = library.registerDocument(pdfDocument.source);
+                const documentId = library.registerDocument(pdfDocument.source);
+                window.activeDocumentId = documentId;
 
-                if (documentId >= 0) {
-                    console.log("Documento registrado. ID: ", documentId);
-                }
+                const savedPageIndex = documentId >= 0 ? library.readingProgress(documentId) : 0;
 
-                Qt.callLater(function () {
-                    const targetPage = Math.min(appSettings.lastPage - 1, pdfDocument.pageCount - 1);
-
-                    pdfView.goToPage(Math.max(0, targetPage));
-                    window.restoringLastPage = false;
-                });
+                window.pendingPageIndex = savedPageIndex;
+                window.restorePageIfReady();
             }
         }
     }
@@ -74,8 +68,10 @@ ApplicationWindow {
         nameFilters: ["PDF files (*.pdf)"]
         onAccepted: {
             window.restoringLastPage = true;
+            window.activeDocumentId = -1;
+            window.pendingPageIndex = -1;
             pdfDocument.source = selectedFile;
-            window.showLibrary = false
+            window.showLibrary = false;
         }
     }
 
@@ -145,14 +141,43 @@ ApplicationWindow {
     property bool panelVisible: true
     property bool restoringLastPage: true
     property bool showLibrary: true
+    property var activeDocumentId: -1
+    property int pendingPageIndex: -1
+
+    onShowLibraryChanged: window.restorePageIfReady()
+
+    function restorePageIfReady() {
+        if (window.pendingPageIndex < 0 || window.showLibrary
+                || pdfDocument.status !== PdfDocument.Ready
+                || pdfView.width <= 0 || pdfView.height <= 0)
+            return;
+
+        Qt.callLater(function () {
+            if (window.pendingPageIndex < 0 || window.showLibrary
+                    || pdfDocument.status !== PdfDocument.Ready
+                    || pdfView.width <= 0 || pdfView.height <= 0)
+                return;
+
+            const targetPage = Math.min(window.pendingPageIndex, pdfDocument.pageCount - 1);
+            window.pendingPageIndex = -1;
+            pdfView.goToPage(Math.max(0, targetPage));
+            window.restoringLastPage = false;
+        });
+    }
 
     LibraryPage {
         id: libraryPage
         anchors.fill: parent
         visible: window.showLibrary
         onOpenPdfRequested: pdfFileDialog.open()
+        onDocumentSelected: function (fileUrl) {
+            window.restoringLastPage = true;
+            window.activeDocumentId = -1;
+            window.pendingPageIndex = -1;
+            pdfDocument.source = fileUrl;
+            window.showLibrary = false;
+        }
     }
-    
 
     RowLayout {
         id: grid
@@ -207,13 +232,16 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     renderScale: 1.0
+                    onWidthChanged: window.restorePageIfReady()
+                    onHeightChanged: window.restorePageIfReady()
                     // TODO: resolver issue #2
                     onCurrentPageChanged: {
                         if (currentPage >= 0) {
                             pageNumber.value = currentPage + 1;
 
-                            if (!window.restoringLastPage)
-                                appSettings.lastPage = currentPage + 1;
+                            if (!window.restoringLastPage && window.activeDocumentId >= 0) {
+                                library.saveReadingProgress(window.activeDocumentId, currentPage);
+                            }
                         }
                     }
                     searchString: searchField.text

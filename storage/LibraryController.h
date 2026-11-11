@@ -6,14 +6,16 @@
 #include <QVariantList>
 
 class LibraryController : public QObject {
-   Q_OBJECT
+    Q_OBJECT
 
-   public:
-      explicit LibraryController(const QSqlDatabase &db);
+  public:
+    explicit LibraryController(const QSqlDatabase &db);
 
-      Q_INVOKABLE qint64 registerDocument(const QUrl &source);
-      Q_INVOKABLE QVariantList documents();
-   private:
+    Q_INVOKABLE qint64 registerDocument(const QUrl &source);
+    Q_INVOKABLE QVariantList documents();
+    Q_INVOKABLE bool saveReadingProgress(qint64 documentId, int pageIndex);
+    Q_INVOKABLE int readingProgress(qint64 documentId);
 
-      QSqlDatabase m_db;
+  private:
+    QSqlDatabase m_db;
 };

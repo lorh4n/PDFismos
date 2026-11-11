@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
@@ -5,7 +6,9 @@ import PDFismos
 
 Rectangle {
     id: libraryPage
+
     signal openPdfRequested
+    signal documentSelected(fileUrl: url)
 
     property var documents: []
 
@@ -47,6 +50,10 @@ Rectangle {
                     anchors.fill: parent
                     anchors.margins: 16
                     spacing: 8
+
+                    TapHandler {
+                        onTapped: libraryPage.documentSelected(documentCard.modelData.fileUrl)
+                    }
 
                     Label {
                         text: documentCard.modelData.title
