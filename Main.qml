@@ -4,6 +4,8 @@ import QtQuick.Controls.Basic
 import QtQuick.Pdf
 import QtQuick.Dialogs
 import QtCore
+import PDFismos
+import PDFismos.ui.pages
 
 ApplicationWindow {
     id: window
@@ -14,12 +16,29 @@ ApplicationWindow {
     visible: true
     title: qsTr("Hello World!!!")
 
+    palette.window: lightMode ? Theme.background : reallyDark
+    palette.windowText: lightMode ? Theme.textPrimary : light
+    palette.base: lightMode ? Theme.paper : reallyDark
+    palette.alternateBase: lightMode ? Theme.surface : dark
+    palette.text: lightMode ? Theme.textPrimary : light
+    palette.button: lightMode ? Theme.surface : dark
+    palette.buttonText: lightMode ? Theme.textPrimary : light
+    palette.mid: lightMode ? "#a0a0a0" : "#666666"
+    palette.dark: lightMode ? "#808080" : "#111111"
+    palette.light: lightMode ? "#ffffff" : "#444444"
+    palette.placeholderText: lightMode ? "#626262" : "#aaaaaa"
+    palette.highlight: lightMode ? Theme.accentPressed : "#3269c7"
+    palette.highlightedText: lightMode ? Theme.textPrimary : "#ffffff"
+    palette.disabled.text: lightMode ? "#808080" : "#858585"
+    palette.disabled.buttonText: lightMode ? "#808080" : "#858585"
+
     Settings {
         id: appSettings
         property alias lastPdf: pdfDocument.source
         property int lastPage: 1
         property alias width: window.width
         property alias height: window.height
+        property alias theme: window.lightMode
     }
 
     Shortcut {
@@ -32,14 +51,14 @@ ApplicationWindow {
         // TODO: resolver issue #2
         onStatusChanged: function (status) {
             if (status === PdfDocument.Ready) {
-                var documentId = library.registerDocument(pdfDocument.source);
+                const  documentId = library.registerDocument(pdfDocument.source);
 
                 if (documentId >= 0) {
                     console.log("Documento registrado. ID: ", documentId);
                 }
 
                 Qt.callLater(function () {
-                    var targetPage = Math.min(appSettings.lastPage - 1, pdfDocument.pageCount - 1);
+                    const targetPage = Math.min(appSettings.lastPage - 1, pdfDocument.pageCount - 1);
 
                     pdfView.goToPage(Math.max(0, targetPage));
                     window.restoringLastPage = false;
@@ -56,10 +75,13 @@ ApplicationWindow {
         onAccepted: {
             window.restoringLastPage = true;
             pdfDocument.source = selectedFile;
+            window.showLibrary = false
         }
     }
 
     header: ToolBar {
+        visible: !window.showLibrary
+
         RowLayout {
             anchors.fill: parent
 
@@ -122,15 +144,25 @@ ApplicationWindow {
     property color light: "#e0e0e0"
     property bool panelVisible: true
     property bool restoringLastPage: true
+    property bool showLibrary: true
+
+    LibraryPage {
+        id: libraryPage
+        anchors.fill: parent
+        visible: window.showLibrary
+        onOpenPdfRequested: pdfFileDialog.open()
+    }
+    
 
     RowLayout {
         id: grid
         spacing: 0
         anchors.fill: parent
+        visible: !window.showLibrary
 
         Rectangle {
             id: rectangle1
-            color: window.lightMode ? window.reallyLight : window.reallyDark
+            color: appSettings.theme ? window.reallyLight : window.reallyDark
             Layout.fillHeight: true
             Layout.fillWidth: true
 
@@ -140,7 +172,7 @@ ApplicationWindow {
                 Label {
                     visible: pdfDocument.status === PdfDocument.Null
                     text: qsTr("Open a PDF to Begin")
-                    color: window.lightMode ? window.dark : window.light
+                    color: appSettings.theme ? window.dark : window.light
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
@@ -150,7 +182,7 @@ ApplicationWindow {
                 Label {
                     visible: pdfDocument.status === PdfDocument.Loading
                     text: qsTr("Loading PDF…")
-                    color: window.lightMode ? window.dark : window.light
+                    color: appSettings.theme ? window.dark : window.light
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     horizontalAlignment: Text.AlignHCenter
@@ -160,7 +192,7 @@ ApplicationWindow {
                 Label {
                     visible: pdfDocument.status === PdfDocument.Error
                     text: qsTr("Could not load PDF: %1").arg(pdfDocument.error)
-                    color: window.lightMode ? window.dark : window.light
+                    color: appSettings.theme ? window.dark : window.light
                     wrapMode: Text.WordWrap
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -192,8 +224,8 @@ ApplicationWindow {
         NotesPanel {
             selectedText: pdfView.selectedText
             pdfViewer: pdfView
-            textColor: window.lightMode ? window.dark : window.light
-            lightMode: window.lightMode
+            textColor: appSettings.theme ? window.dark : window.light
+            lightMode: appSettings.theme
             light: window.light
             dark: window.dark
             visible: window.panelVisible
@@ -202,6 +234,8 @@ ApplicationWindow {
     }
 
     footer: ToolBar {
+        visible: !window.showLibrary
+
         RowLayout {
             anchors.fill: parent
 

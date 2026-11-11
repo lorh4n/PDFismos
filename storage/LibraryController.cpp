@@ -25,3 +25,8 @@ qint64 LibraryController::registerDocument(const QUrl &source)
 
     return addDocument(m_db, filePath, fileInfo.fileName());
 } 
+
+QVariantList LibraryController::documents()
+{
+    return listDocuments(m_db);
+}

@@ -100,3 +100,25 @@ qint64 addDocument(QSqlDatabase &db, const QString &filePath,
 
     return query.value(0).toLongLong();
 }
+
+QVariantList listDocuments(QSqlDatabase &db) {
+    QSqlQuery query(db);
+
+    QVariantList documents;
+
+    if (!query.exec("SELECT title, file_path "
+                    "FROM documents "
+                    "ORDER BY added_at DESC, id DESC")) {
+        qWarning() << "Erro ao listar documentos:" << query.lastError().text();
+        return documents;
+    }
+
+    while (query.next()) {
+        QVariantMap document;
+        document.insert("title", query.value(0).toString());
+        document.insert("filePath", query.value(1).toString());
+        documents.append(document);
+    }
+
+    return documents;
+}
