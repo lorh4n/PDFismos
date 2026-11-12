@@ -303,4 +303,9 @@ ApplicationWindow {
             }
         }
     }
+    WindowResizeFrame {
+        parent: Overlay.overlay
+        anchors.fill: parent
+        appWindow: window
+    }
 }

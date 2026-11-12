@@ -30,6 +30,8 @@ qt_add_qml_module(appPDFismos
         Main.qml
         NotesPanel.qml
         TitleBar.qml
+        WindowResizeHandle.qml
+        WindowResizeFrame.qml
         ui/Theme.qml
         ui/pages/LibraryPage.qml
 )

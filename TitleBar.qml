@@ -39,8 +39,8 @@ Rectangle {
             MouseArea {
                 anchors.fill: parent
                 onPressed: {
-                  console.log("Arrea de Arraste: ", width, height);
-                  root.appWindow.startSystemMove()
+                    console.log("Arrea de Arraste: ", width, height);
+                    root.appWindow.startSystemMove();
                 }
             }
         }
@@ -65,4 +65,5 @@ Rectangle {
             onClicked: root.appWindow.close()
         }
     }
+
 }
