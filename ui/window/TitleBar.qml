@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import PDFismos
 
 Rectangle {
     id: root
@@ -10,8 +11,8 @@ Rectangle {
     topLeftRadius: root.cornerRadius
     topRightRadius: root.cornerRadius
 
-    implicitHeight: 40
-    color: "#191817"
+    implicitHeight: 46
+    color: Theme.titleBarBackground
 
     RowLayout {
         anchors.fill: parent
@@ -54,13 +55,14 @@ Rectangle {
             }
         }
 
-        ToolButton {
-            text: "—"
+        WindowControl {
+            icon.source: "Title Bar/minimize.svg"
+
             onClicked: root.appWindow.showMinimized()
         }
 
-        ToolButton {
-            text: root.appWindow.visibility === Window.Maximized ? "❐" : "□"
+        WindowControl {
+            icon.source: root.appWindow.visibility === Window.Maximized ? "Title Bar/restore.svg" : "Title Bar/maximize.svg"
             onClicked: {
                 if (root.appWindow.visibility === Window.Maximized)
                     root.appWindow.showNormal();
@@ -69,8 +71,10 @@ Rectangle {
             }
         }
 
-        ToolButton {
-            text: "×"
+        WindowControl {
+            icon.source: "Title Bar/close.svg"
+
+            closeAction: true
             onClicked: root.appWindow.close()
         }
     }
