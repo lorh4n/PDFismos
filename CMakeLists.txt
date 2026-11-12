@@ -35,11 +35,14 @@ qt_add_qml_module(appPDFismos
         ui/Theme.qml
         ui/pages/LibraryPage.qml
         ui/window/WindowControl.qml
+        ui/window/AppLogo.qml
     RESOURCES
+        assets/fonts/space-grotesk/SpaceGrotesk.ttf
         "ui/window/Title Bar/minimize.svg"
         "ui/window/Title Bar/maximize.svg"
         "ui/window/Title Bar/restore.svg"
         "ui/window/Title Bar/close.svg"
+        "ui/window/Title Bar/library.svg"
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

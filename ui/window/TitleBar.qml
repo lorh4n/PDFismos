@@ -14,32 +14,72 @@ Rectangle {
     implicitHeight: 46
     color: Theme.titleBarBackground
 
+    signal libraryRequested()
+
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: 12
         anchors.rightMargin: 12
         anchors.topMargin: 4
-        anchors.bottomMargin: 4
+        anchors.bottomMargin: 0
         spacing: 4
 
-        Label {
-            text: "E"
-            color: "#191817"
-            font.bold: true
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            Layout.preferredWidth: 40
-            Layout.fillHeight: true
-            background: Rectangle {
-                color: "#EDF57A"
-                radius: 10
-            }
-        }
+        AppLogo {}
 
         Label {
-            text: "PDFismos"
-            color: "white"
-            leftPadding: 8
+            text: qsTr("Biblioteca")
+
+            Layout.preferredHeight: 36
+            Layout.alignment: Qt.AlignBottom
+
+            leftPadding: 40
+            rightPadding: 14
+            verticalAlignment: Text.AlignVCenter
+
+            font.pixelSize: 13
+            font.weight: Font.DemiBold
+
+            color: root.appWindow.showLibrary ? Theme.textPrimary : Theme.windowControlText
+
+            // Fundo da aba inteira
+            background: Rectangle {
+                color: root.appWindow.showLibrary ? Theme.libraryTabActive : "transparent"
+
+                topLeftRadius: 12
+                topRightRadius: 12
+            }
+
+            // Quadrado atrás do ícone
+            Rectangle {
+                anchors.left: parent.left
+                anchors.leftMargin: 10
+                anchors.verticalCenter: parent.verticalCenter
+
+                width: 20
+                height: 20
+                radius: 6
+
+                color: root.appWindow.showLibrary ? Theme.titleBarBackground : "transparent"
+
+                Image {
+                    anchors.centerIn: parent
+
+                    width: 15
+                    height: 15
+
+                    source: "Title Bar/library.svg"
+                    fillMode: Image.PreserveAspectFit
+                }
+            }
+
+            // Action
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    root.libraryRequested()
+                    console.log("Navegando para Biblioteca")
+                }
+            }
         }
 
         Item {

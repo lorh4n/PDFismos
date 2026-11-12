@@ -18,8 +18,10 @@ ApplicationWindow {
     visible: true
     flags: Qt.Window | Qt.FramelessWindowHint
     color: "transparent"
-    title: qsTr("Hello World!!!")
+    title: qsTr("PDFismo by Estudismos")
     readonly property real windowCornerRadius: window.visibility === Window.Windowed ? 18 : 0
+    font.family: Theme.fontFamily
+
 
     palette.window: lightMode ? Theme.background : reallyDark
     palette.windowText: lightMode ? Theme.textPrimary : light
@@ -87,6 +89,11 @@ ApplicationWindow {
             Layout.fillWidth: true
             appWindow: window
             cornerRadius: window.windowCornerRadius
+            onLibraryRequested: {
+                // Atualiza a lista de documentos
+                libraryPage.documents = library.documents();
+                window.showLibrary = true
+            }
         }
 
         ToolBar {
@@ -183,6 +190,13 @@ ApplicationWindow {
         cornerRadius: window.windowCornerRadius
         onOpenPdfRequested: pdfFileDialog.open()
         onDocumentSelected: function (fileUrl) {
+
+            // Se a gnt ja estava com esse pdf aberto não precisamos fazer isso
+            if (pdfDocument.status === PdfDocument.Ready && String(pdfDocument.source) === String(fileUrl)) {
+                window.showLibrary = false;
+                return
+            }
+
             window.restoringLastPage = true;
             window.activeDocumentId = -1;
             window.pendingPageIndex = -1;
