@@ -5,11 +5,20 @@ import QtQuick.Layouts
 Rectangle {
     id: root
     required property var appWindow
+    required property real cornerRadius
+
+    topLeftRadius: root.cornerRadius
+    topRightRadius: root.cornerRadius
+
     implicitHeight: 40
     color: "#191817"
 
     RowLayout {
         anchors.fill: parent
+        anchors.leftMargin: 12
+        anchors.rightMargin: 12
+        anchors.topMargin: 4
+        anchors.bottomMargin: 4
         spacing: 4
 
         Label {
@@ -65,5 +74,4 @@ Rectangle {
             onClicked: root.appWindow.close()
         }
     }
-
 }

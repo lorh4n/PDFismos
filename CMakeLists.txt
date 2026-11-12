@@ -28,10 +28,10 @@ qt_add_qml_module(appPDFismos
     URI PDFismos
     QML_FILES
         Main.qml
-        NotesPanel.qml
-        TitleBar.qml
-        WindowResizeHandle.qml
-        WindowResizeFrame.qml
+        ui/components/NotesPanel.qml
+        ui/window/TitleBar.qml
+        ui/window/WindowResizeHandle.qml
+        ui/window/WindowResizeFrame.qml
         ui/Theme.qml
         ui/pages/LibraryPage.qml
 )

@@ -11,7 +11,10 @@ Rectangle {
     signal documentSelected(fileUrl: url)
 
     property real cornerRadius: 18
+
     radius: cornerRadius
+    topLeftRadius: 0
+    topRightRadius: 0
     property var documents: []
 
     Component.onCompleted: libraryPage.documents = library.documents()

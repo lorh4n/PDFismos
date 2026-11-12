@@ -5,7 +5,9 @@ import QtQuick.Pdf
 import QtQuick.Dialogs
 import QtCore
 import PDFismos
+import PDFismos.ui.components
 import PDFismos.ui.pages
+import PDFismos.ui.window
 
 ApplicationWindow {
     id: window
@@ -17,6 +19,7 @@ ApplicationWindow {
     flags: Qt.Window | Qt.FramelessWindowHint
     color: "transparent"
     title: qsTr("Hello World!!!")
+    readonly property real windowCornerRadius: window.visibility === Window.Windowed ? 18 : 0
 
     palette.window: lightMode ? Theme.background : reallyDark
     palette.windowText: lightMode ? Theme.textPrimary : light
@@ -78,10 +81,12 @@ ApplicationWindow {
     }
 
     header: ColumnLayout {
+        spacing: 0
 
         TitleBar {
             Layout.fillWidth: true
             appWindow: window
+            cornerRadius: window.windowCornerRadius
         }
 
         ToolBar {
@@ -175,7 +180,7 @@ ApplicationWindow {
         id: libraryPage
         anchors.fill: parent
         visible: window.showLibrary
-        cornerRadius: window.visibility === Window.Windowed ? 18 : 0
+        cornerRadius: window.windowCornerRadius
         onOpenPdfRequested: pdfFileDialog.open()
         onDocumentSelected: function (fileUrl) {
             window.restoringLastPage = true;
