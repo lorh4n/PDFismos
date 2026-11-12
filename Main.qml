@@ -22,7 +22,6 @@ ApplicationWindow {
     readonly property real windowCornerRadius: window.visibility === Window.Windowed ? 18 : 0
     font.family: Theme.fontFamily
 
-
     palette.window: lightMode ? Theme.background : reallyDark
     palette.windowText: lightMode ? Theme.textPrimary : light
     palette.base: lightMode ? Theme.paper : reallyDark
@@ -41,7 +40,8 @@ ApplicationWindow {
 
     Settings {
         id: appSettings
-        property alias lastPdf: pdfDocument.source
+        // TODO: IMPLEMNETAR "CONTINUAR ONDE PAROU" MAS ISSO VAI SER  GUARDADO NO BANCO
+        // property alias lastPdf: pdfDocument.source
         property alias width: window.width
         property alias height: window.height
         property alias theme: window.lightMode
@@ -86,14 +86,19 @@ ApplicationWindow {
         spacing: 0
 
         TitleBar {
+            documentAvailable: pdfDocument.status === PdfDocument.Ready
+
+            // TODO: usar o Document TItle que é do metadado ou usar o nome do Documento salvo? Pensar sobre no futuro (pergurntar pros usuarios depois)
+            documentTitle: library.fileName(pdfDocument.source)
             Layout.fillWidth: true
             appWindow: window
             cornerRadius: window.windowCornerRadius
             onLibraryRequested: {
                 // Atualiza a lista de documentos
                 libraryPage.documents = library.documents();
-                window.showLibrary = true
+                window.showLibrary = true;
             }
+            onDocumentRequested: window.showLibrary = false
         }
 
         ToolBar {
@@ -194,7 +199,7 @@ ApplicationWindow {
             // Se a gnt ja estava com esse pdf aberto não precisamos fazer isso
             if (pdfDocument.status === PdfDocument.Ready && String(pdfDocument.source) === String(fileUrl)) {
                 window.showLibrary = false;
-                return
+                return;
             }
 
             window.restoringLastPage = true;

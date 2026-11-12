@@ -33,3 +33,7 @@ bool LibraryController::saveReadingProgress(qint64 documentId, int pageIndex) {
 int LibraryController::readingProgress(qint64 documentId) {
     return loadDocumentProgress(m_db, documentId);
 }
+
+QString LibraryController::fileName(const QUrl &source) {
+    return source.fileName();
+}
