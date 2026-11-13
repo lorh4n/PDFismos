@@ -63,12 +63,12 @@ ApplicationWindow {
                 window.activeDocumentId = documentId;
                 const savedColor = documentId >= 0 ? library.documentColor(documentId) : "";
                 const loadedUrl = String(pdfDocument.source);
-                for (let i = 0; i < openDocuments.count; i++) {
-                    if (openDocuments.get(i).tabUrl === loadedUrl) {
-                        openDocuments.setProperty(i, "tabColor",
-                                                  savedColor !== "" ? savedColor : String(Theme.accent));
-                        break;
-                    }
+                const tabIndex = openDocuments.indexOfUrl(loadedUrl);
+                if (tabIndex >= 0) {
+                    openDocuments.setProperty(
+                        tabIndex, "tabColor",
+                        savedColor !== "" ? savedColor : String(Theme.accent)
+                    );
                 }
 
                 const savedPageIndex = documentId >= 0 ? library.readingProgress(documentId) : 0;
@@ -112,62 +112,15 @@ ApplicationWindow {
             }
         }
 
-        ToolBar {
+        ReaderToolbar {
+            id: readerToolbar
+            Layout.fillWidth: true
             visible: !window.showLibrary
+            pdfView: readerPage.view
+            panelVisible: window.panelVisible
 
-            RowLayout {
-                anchors.fill: parent
-
-                ToolButton {
-                    text: qsTr("Abrir PDF")
-                    onClicked: {
-                        console.log("Abrir PDF Foi clicked");
-                        pdfFileDialog.open();
-                    }
-                }
-
-                TextField {
-                    id: searchField
-                    placeholderText: qsTr("Buscar no documento")
-                    Layout.fillWidth: true
-                    onAccepted: {
-                        if (pdfView.searchModel.count > 0) {
-                            pdfView.searchForward();
-                        }
-                    }
-                }
-                ToolButton {
-                    text: "↑"
-                    enabled: pdfView.searchModel.count > 0
-                    onClicked: pdfView.searchBack()
-                }
-
-                ToolButton {
-                    text: "↓"
-                    enabled: pdfView.searchModel.count > 0
-                    onClicked: pdfView.searchForward()
-                }
-
-                ToolButton {
-                    text: "-"
-                    onClicked: {
-                        pdfView.renderScale = Math.max(0.5, pdfView.renderScale - 0.1);
-                    }
-                }
-                Label {
-                    text: Math.round(pdfView.renderScale * 100) + "%"
-                }
-                ToolButton {
-                    text: "+"
-                    onClicked: {
-                        pdfView.renderScale = Math.min(2.0, pdfView.renderScale + 0.1);
-                    }
-                }
-                ToolButton {
-                    text: window.panelVisible ? qsTr("Ocultar painel") : qsTr("Mostrar painel")
-                    onClicked: window.panelVisible = !window.panelVisible
-                }
-            }
+            onOpenRequested: pdfFileDialog.open()
+            onPanelToggleRequested: window.panelVisible = !window.panelVisible
         }
     }
 
@@ -182,23 +135,16 @@ ApplicationWindow {
     property var activeDocumentId: -1
     property int pendingPageIndex: -1
 
-    ListModel {
+    DocumentTabsModel {
         id: openDocuments
     }
 
     function openDocument(fileUrl) {
         const url = String(fileUrl);
         window.selectedDocumentUrl = url;
-        let alreadyOpen = false;
 
-        for (let i = 0; i < openDocuments.count; i++) {
-            if (openDocuments.get(i).tabUrl === url) {
-                alreadyOpen = true;
-                break;
-            }
-        }
 
-        if (!alreadyOpen) {
+        if (openDocuments.indexofUrl(url) === -1) {
             openDocuments.append({
                 tabUrl: url,
                 tabTitle: library.fileName(fileUrl),
@@ -237,7 +183,6 @@ ApplicationWindow {
         window.pendingPageIndex = -1;
         window.selectedDocumentUrl = "";
         pdfDocument.source = "";
-        pdfDocument.source = "";
         libraryPage.documents = library.documents();
         window.showLibrary = true;
     }
@@ -245,16 +190,16 @@ ApplicationWindow {
     onShowLibraryChanged: window.restorePageIfReady()
 
     function restorePageIfReady() {
-        if (window.pendingPageIndex < 0 || window.showLibrary || pdfDocument.status !== PdfDocument.Ready || pdfView.width <= 0 || pdfView.height <= 0)
+        if (window.pendingPageIndex < 0 || window.showLibrary || pdfDocument.status !== PdfDocument.Ready || readerPage.view.width <= 0 || readerPage.view.height <= 0)
             return;
 
         Qt.callLater(function () {
-            if (window.pendingPageIndex < 0 || window.showLibrary || pdfDocument.status !== PdfDocument.Ready || pdfView.width <= 0 || pdfView.height <= 0)
+            if (window.pendingPageIndex < 0 || window.showLibrary || pdfDocument.status !== PdfDocument.Ready || readerPage.view.width <= 0 || readerPage.view.height <= 0)
                 return;
 
             const targetPage = Math.min(window.pendingPageIndex, pdfDocument.pageCount - 1);
             window.pendingPageIndex = -1;
-            pdfView.goToPage(Math.max(0, targetPage));
+            readerPage.view.goToPage(Math.max(0, targetPage));
             window.restoringLastPage = false;
         });
     }
@@ -270,122 +215,51 @@ ApplicationWindow {
         }
     }
 
-    RowLayout {
-        id: grid
-        spacing: 0
+    ReaderPage {
+        id: readerPage
+
         anchors.fill: parent
+
+        readerBackground: appSettings.theme ? window.reallyLight : window.reallyDark
+        readerTextColor: appSettings.theme ? window.dark : window.light
+
         visible: !window.showLibrary
 
-        Rectangle {
-            id: rectangle1
-            color: appSettings.theme ? window.reallyLight : window.reallyDark
-            Layout.fillHeight: true
-            Layout.fillWidth: true
+        currentDocument: pdfDocument
+        lightMode: appSettings.theme
 
-            ColumnLayout {
-                anchors.fill: parent
-                // Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-                Label {
-                    visible: pdfDocument.status === PdfDocument.Null
-                    text: qsTr("Open a PDF to Begin")
-                    color: appSettings.theme ? window.dark : window.light
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
+        searchText: readerToolbar.searchText
 
-                Label {
-                    visible: pdfDocument.status === PdfDocument.Loading
-                    text: qsTr("Loading PDF…")
-                    color: appSettings.theme ? window.dark : window.light
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
+        panelVisible: window.panelVisible
+        dark: window.dark
+        light: window.light
 
-                Label {
-                    visible: pdfDocument.status === PdfDocument.Error
-                    text: qsTr("Could not load PDF: %1").arg(pdfDocument.error)
-                    color: appSettings.theme ? window.dark : window.light
-                    wrapMode: Text.WordWrap
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
+        onThemeToggleRequested: window.lightMode = !window.lightMode
+        onViewportChanged: window.restorePageIfReady()
 
-                PdfMultiPageView {
-                    id: pdfView
-                    visible: pdfDocument.status === PdfDocument.Ready
-                    document: pdfDocument
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    renderScale: 1.0
-                    onWidthChanged: window.restorePageIfReady()
-                    onHeightChanged: window.restorePageIfReady()
-                    // TODO: resolver issue #2
-                    onCurrentPageChanged: {
-                        if (currentPage >= 0) {
-                            pageNumber.value = currentPage + 1;
+        onReadingPageChanged: function (pageIndex) {
+            if (pageIndex < 0)
+                return;
 
-                            if (!window.restoringLastPage && window.activeDocumentId >= 0) {
-                                library.saveReadingProgress(window.activeDocumentId, currentPage);
-                            }
-                        }
-                    }
-                    searchString: searchField.text
-                }
+            readerFooter.pageValue = pageIndex + 1;
+            if (!window.restoringLastPage && window.activeDocumentId >= 0) {
+                library.saveReadingProgress(window.activeDocumentId, pageIndex);
             }
-        }
-
-        NotesPanel {
-            selectedText: pdfView.selectedText
-            pdfViewer: pdfView
-            textColor: appSettings.theme ? window.dark : window.light
-            lightMode: appSettings.theme
-            light: window.light
-            dark: window.dark
-            visible: window.panelVisible
-            onThemeToggleRequested: window.lightMode = !window.lightMode
         }
     }
 
-    footer: ToolBar {
+    footer: ReaderFooter {
+        id: readerFooter
         visible: !window.showLibrary
+        pageCount: pdfDocument.pageCount
 
-        RowLayout {
-            anchors.fill: parent
+        documentReady: pdfDocument.status === PdfDocument.Ready
 
-            Label {
-                text: qsTr("Page")
-            }
-
-            SpinBox {
-                id: pageNumber
-                from: 1
-                to: Math.max(1, pdfDocument.pageCount)
-                value: 1
-                editable: true
-                enabled: pdfDocument.status === PdfDocument.Ready
-                onValueModified: pdfView.goToPage(value - 1)
-            }
-
-            Label {
-                text: qsTr("of %1").arg(pdfDocument.pageCount)
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
-
-            ToolButton {
-                text: qsTr("Fit Width")
-                enabled: pdfDocument.status === PdfDocument.Ready
-                onClicked: pdfView.scaleToWidth(pdfView.width, pdfView.height)
-            }
+        onPageRequested: function (pageIndex) {
+            readerPage.view.goToPage(pageIndex);
         }
+
+        onFitWidthRequested: readerPage.view.scaleToWidth(readerPage.view.width, readerPage.view.height)
     }
     WindowResizeFrame {
         parent: Overlay.overlay

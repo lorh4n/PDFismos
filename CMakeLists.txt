@@ -35,6 +35,10 @@ qt_add_qml_module(appPDFismos
         ui/window/WindowResizeFrame.qml
         ui/Theme.qml
         ui/pages/LibraryPage.qml
+        ui/pages/ReaderToolbar.qml
+        ui/pages/ReaderFooter.qml
+        ui/pages/ReaderPage.qml
+        ui/pages/DocumentTabsModel.qml
         ui/window/WindowControl.qml
         ui/window/AppLogo.qml
     RESOURCES
