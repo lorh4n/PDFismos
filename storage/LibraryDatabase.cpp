@@ -1,5 +1,9 @@
 #include "LibraryDatabase.h"
 
+#include <QFile>
+
+#include <QFile>
+
 bool initializeLibrarySchema(QSqlDatabase &db) {
     QSqlQuery query(db);
 
@@ -26,29 +30,41 @@ bool initializeLibrarySchema(QSqlDatabase &db) {
         return false;
     }
 
+    QFile migrationFile(":/storage/migrations/001_initial.sql");
+    if (!migrationFile.open(QIODevice::ReadOnly)) {
+        qWarning() << "Erro ao abrir a migration:" << migrationFile.errorString();
+        return false;
+    }
+
+    const QString migrationSql = QString::fromUtf8(migrationFile.readAll());
+    if (migrationFile.error() != QFileDevice::NoError) {
+        qWarning() << "Erro ao ler a migration:" << migrationFile.errorString();
+        return false;
+    }
+    migrationFile.close();
+
+    if (migrationSql.trimmed().isEmpty()) {
+        qWarning() << "A migration inicial está vazia.";
+        return false;
+    }
+
     if (!db.transaction()) {
         qWarning() << db.lastError().text();
         return false;
     }
 
-    if (!query.exec(R"(
-      CREATE TABLE IF NOT EXISTS documents (
-         id INTEGER PRIMARY KEY,
-         file_path TEXT NOT NULL UNIQUE,
-         title TEXT,
-         added_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )
-      )") ||
-        !query.exec(R"(
-            CREATE TABLE IF NOT EXISTS reading_progress (
-               document_id INTEGER PRIMARY KEY REFERENCES documents(id),
-               page_index INTEGER NOT NULL CHECK (page_index >= 0),
-               updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )
-         )")) {
-        qWarning() << query.lastError().text();
-        db.rollback();
-        return false;
+    // Esta separação atende à migration atual; não interpreta strings ou triggers SQL.
+    const QStringList statements = migrationSql.split(';', Qt::SkipEmptyParts);
+    for (const QString &statement : statements) {
+        const QString sql = statement.trimmed();
+        if (sql.isEmpty())
+            continue;
+
+        if (!query.exec(sql)) {
+            qWarning() << "Erro ao executar a migration:" << query.lastError().text();
+            db.rollback();
+            return false;
+        }
     }
 
     if (!query.exec("PRAGMA user_version = 1")) {
@@ -174,4 +190,22 @@ int loadDocumentProgress(QSqlDatabase &db, qint64 documentId) {
         return 0;
 
     return query.value(0).toInt();
+}
+
+QString loadDocumentColor(QSqlDatabase &db, qint64 documentId) {
+    QSqlQuery query(db);
+    if (!query.prepare("SELECT color FROM documents WHERE id = :document_id")) {
+        qWarning() << "Erro ao preparar a consulta da cor:" << query.lastError().text();
+        return {};
+    }
+    query.bindValue(":document_id", documentId);
+    if (!query.exec()) {
+        qWarning() << "Erro ao consultar a cor:" << query.lastError().text();
+        return {};
+    }
+    if (!query.next()) {
+        qWarning() << "Documento não encontrado:" << documentId;
+        return {};
+    }
+    return query.value(0).toString();
 }

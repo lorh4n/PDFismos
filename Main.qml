@@ -59,6 +59,8 @@ ApplicationWindow {
             if (status === PdfDocument.Ready) {
                 const documentId = library.registerDocument(pdfDocument.source);
                 window.activeDocumentId = documentId;
+                const savedColor = documentId >= 0 ? library.documentColor(documentId) : "";
+                window.activeDocumentColor = savedColor !== "" ? savedColor : Theme.accent;
 
                 const savedPageIndex = documentId >= 0 ? library.readingProgress(documentId) : 0;
 
@@ -90,6 +92,7 @@ ApplicationWindow {
 
             // TODO: usar o Document TItle que é do metadado ou usar o nome do Documento salvo? Pensar sobre no futuro (pergurntar pros usuarios depois)
             documentTitle: library.fileName(pdfDocument.source)
+            documentColor: window.activeDocumentColor
             Layout.fillWidth: true
             appWindow: window
             cornerRadius: window.windowCornerRadius
@@ -169,6 +172,7 @@ ApplicationWindow {
     property bool restoringLastPage: true
     property bool showLibrary: true
     property var activeDocumentId: -1
+    property color activeDocumentColor: Theme.accent
     property int pendingPageIndex: -1
 
     onShowLibraryChanged: window.restorePageIfReady()

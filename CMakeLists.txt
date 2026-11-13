@@ -46,6 +46,12 @@ qt_add_qml_module(appPDFismos
         "ui/window/Title Bar/assets/library.svg"
 )
 
+qt_add_resources(appPDFismos "database_migrations"
+    PREFIX "/"
+    FILES
+        storage/migrations/001_initial.sql
+)
+
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.

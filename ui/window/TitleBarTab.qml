@@ -6,6 +6,7 @@ Label {
     id: root
 
     property bool active: false
+    property color accentColor: Theme.accent
 
     signal clicked
 
@@ -34,7 +35,7 @@ Label {
         height: 8
         radius: 4
 
-        color: Theme.accent
+        color: root.accentColor
     }
     MouseArea {
         anchors.fill: parent

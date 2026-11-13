@@ -37,3 +37,7 @@ int LibraryController::readingProgress(qint64 documentId) {
 QString LibraryController::fileName(const QUrl &source) {
     return source.fileName();
 }
+
+QString LibraryController::documentColor(qint64 documentId) {
+    return loadDocumentColor(m_db, documentId);
+}

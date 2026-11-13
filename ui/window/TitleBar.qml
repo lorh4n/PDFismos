@@ -9,6 +9,7 @@ Rectangle {
     required property real cornerRadius
     required property bool documentAvailable
     required property string documentTitle
+    required property color documentColor
 
     signal documentRequested
 
@@ -89,6 +90,7 @@ Rectangle {
         TitleBarTab {
             visible: root.documentAvailable
             text: root.documentTitle
+            accentColor: root.documentColor
             active: !root.appWindow.showLibrary
 
             Layout.preferredHeight: 36
