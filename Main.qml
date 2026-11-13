@@ -8,6 +8,7 @@ import PDFismos
 import PDFismos.ui.components
 import PDFismos.ui.pages
 import PDFismos.ui.window
+import QtQml.Models
 
 ApplicationWindow {
     id: window
@@ -21,6 +22,7 @@ ApplicationWindow {
     title: qsTr("PDFismo by Estudismos")
     readonly property real windowCornerRadius: window.visibility === Window.Windowed ? 18 : 0
     font.family: Theme.fontFamily
+    property string selectedDocumentUrl: ""
 
     palette.window: lightMode ? Theme.background : reallyDark
     palette.windowText: lightMode ? Theme.textPrimary : light
@@ -60,7 +62,14 @@ ApplicationWindow {
                 const documentId = library.registerDocument(pdfDocument.source);
                 window.activeDocumentId = documentId;
                 const savedColor = documentId >= 0 ? library.documentColor(documentId) : "";
-                window.activeDocumentColor = savedColor !== "" ? savedColor : Theme.accent;
+                const loadedUrl = String(pdfDocument.source);
+                for (let i = 0; i < openDocuments.count; i++) {
+                    if (openDocuments.get(i).tabUrl === loadedUrl) {
+                        openDocuments.setProperty(i, "tabColor",
+                                                  savedColor !== "" ? savedColor : String(Theme.accent));
+                        break;
+                    }
+                }
 
                 const savedPageIndex = documentId >= 0 ? library.readingProgress(documentId) : 0;
 
@@ -72,15 +81,11 @@ ApplicationWindow {
 
     FileDialog {
         id: pdfFileDialog
-        title: qsTr("Choose a PDF")
+        title: qsTr("Escolha um PDF")
         fileMode: FileDialog.OpenFile
         nameFilters: ["PDF files (*.pdf)"]
         onAccepted: {
-            window.restoringLastPage = true;
-            window.activeDocumentId = -1;
-            window.pendingPageIndex = -1;
-            pdfDocument.source = selectedFile;
-            window.showLibrary = false;
+            window.openDocument(selectedFile);
         }
     }
 
@@ -88,12 +93,8 @@ ApplicationWindow {
         spacing: 0
 
         TitleBar {
-            documentAvailable: pdfDocument.status === PdfDocument.Ready
-                   && pdfDocument.source.toString() !== ""
-
-            // TODO: usar o Document TItle que é do metadado ou usar o nome do Documento salvo? Pensar sobre no futuro (pergurntar pros usuarios depois)
-            documentTitle: library.fileName(pdfDocument.source)
-            documentColor: window.activeDocumentColor
+            documentTabs: openDocuments
+            selectedDocumentUrl: window.selectedDocumentUrl
             Layout.fillWidth: true
             appWindow: window
             cornerRadius: window.windowCornerRadius
@@ -102,13 +103,12 @@ ApplicationWindow {
                 libraryPage.documents = library.documents();
                 window.showLibrary = true;
             }
-            onDocumentRequested: window.showLibrary = false
-            onDocumentCloseRequested: {
-                window.restoringLastPage = true;
-                window.activeDocumentId = -1;
-                window.pendingPageIndex = -1;
-                pdfDocument.source = "";
-                window.showLibrary = true;
+            onDocumentRequested: function (fileUrl) {
+                window.openDocument(fileUrl);
+            }
+
+            onDocumentCloseRequested: function (tabIndex) {
+                window.closeDocumentTab(tabIndex);
             }
         }
 
@@ -180,8 +180,67 @@ ApplicationWindow {
     property bool restoringLastPage: true
     property bool showLibrary: true
     property var activeDocumentId: -1
-    property color activeDocumentColor: Theme.accent
     property int pendingPageIndex: -1
+
+    ListModel {
+        id: openDocuments
+    }
+
+    function openDocument(fileUrl) {
+        const url = String(fileUrl);
+        window.selectedDocumentUrl = url;
+        let alreadyOpen = false;
+
+        for (let i = 0; i < openDocuments.count; i++) {
+            if (openDocuments.get(i).tabUrl === url) {
+                alreadyOpen = true;
+                break;
+            }
+        }
+
+        if (!alreadyOpen) {
+            openDocuments.append({
+                tabUrl: url,
+                tabTitle: library.fileName(fileUrl),
+                tabColor: String(Theme.accent)
+            });
+        }
+
+        if (String(pdfDocument.source) === url) {
+            window.showLibrary = false;
+            return;
+        }
+
+        window.restoringLastPage = true;
+        window.activeDocumentId = -1;
+        window.pendingPageIndex = -1;
+        pdfDocument.source = fileUrl;
+        window.showLibrary = false;
+    }
+
+    function closeDocumentTab(tabIndex) {
+        const wasSelected = openDocuments.get(tabIndex).tabUrl === window.selectedDocumentUrl;
+        openDocuments.remove(tabIndex);
+
+        if (!wasSelected) {
+            return;
+        }
+
+        if (openDocuments.count > 0) {
+            const nextIndex = Math.min(tabIndex, openDocuments.count - 1);
+            window.openDocument(openDocuments.get(nextIndex).tabUrl);
+            return;
+        }
+
+        window.restoringLastPage = true;
+        window.activeDocumentId = -1;
+        window.pendingPageIndex = -1;
+        window.selectedDocumentUrl = "";
+        pdfDocument.source = "";
+        pdfDocument.source = "";
+        libraryPage.documents = library.documents();
+        window.showLibrary = true;
+    }
 
     onShowLibraryChanged: window.restorePageIfReady()
 
@@ -207,18 +266,7 @@ ApplicationWindow {
         cornerRadius: window.windowCornerRadius
         onOpenPdfRequested: pdfFileDialog.open()
         onDocumentSelected: function (fileUrl) {
-
-            // Se a gnt ja estava com esse pdf aberto não precisamos fazer isso
-            if (pdfDocument.status === PdfDocument.Ready && String(pdfDocument.source) === String(fileUrl)) {
-                window.showLibrary = false;
-                return;
-            }
-
-            window.restoringLastPage = true;
-            window.activeDocumentId = -1;
-            window.pendingPageIndex = -1;
-            pdfDocument.source = fileUrl;
-            window.showLibrary = false;
+            window.openDocument(fileUrl);
         }
     }
 

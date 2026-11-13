@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
@@ -5,14 +7,16 @@ import PDFismos
 
 Rectangle {
     id: root
+
+    required property var documentTabs
+    required property string selectedDocumentUrl
+
     required property var appWindow
     required property real cornerRadius
-    required property bool documentAvailable
-    required property string documentTitle
-    required property color documentColor
 
-    signal documentRequested
-    signal documentCloseRequested
+
+    signal documentRequested(string fileUrl)
+    signal documentCloseRequested(int tabIndex)
 
     topLeftRadius: root.cornerRadius
     topRightRadius: root.cornerRadius
@@ -88,20 +92,26 @@ Rectangle {
                 }
             }
         }
-        TitleBarTab {
-            visible: root.documentAvailable
-            text: root.documentTitle
-            accentColor: root.documentColor
-            active: !root.appWindow.showLibrary
 
-            Layout.preferredHeight: 36
-            Layout.maximumWidth: 200
-            Layout.alignment: Qt.AlignBottom
+        Repeater {
+            model: root.documentTabs
 
-            onClicked: root.documentRequested()
-            onCloseRequested: {
-                console.log("Pedido pra fechar pdf");
-                root.documentCloseRequested();
+            delegate: TitleBarTab {
+                required property int index
+                required property string tabUrl
+                required property string tabTitle
+                required property string tabColor
+
+                text: tabTitle
+                accentColor: tabColor
+                active: !root.appWindow.showLibrary && tabUrl === root.selectedDocumentUrl
+
+                Layout.preferredHeight: 36
+                Layout.maximumWidth: 200
+                Layout.alignment: Qt.AlignBottom
+
+                onClicked: root.documentRequested(tabUrl)
+                onCloseRequested: root.documentCloseRequested(index)
             }
         }
 
