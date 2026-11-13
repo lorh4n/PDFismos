@@ -8,10 +8,11 @@ Label {
     property bool active: false
     property color accentColor: Theme.accent
 
+    signal closeRequested
     signal clicked
 
     leftPadding: 30
-    rightPadding: 14
+    rightPadding: 38
     verticalAlignment: Text.AlignVCenter
 
     font.pixelSize: 13
@@ -40,5 +41,27 @@ Label {
     MouseArea {
         anchors.fill: parent
         onClicked: root.clicked()
+    }
+    Rectangle {
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.rightMargin: 10
+
+        width: 18
+        height: 18
+        radius: 6
+        color: "transparent"
+
+        Text {
+            anchors.centerIn: parent
+            text: "×"
+            color: root.color
+            font.pixelSize: 18
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: root.closeRequested()
+        }
     }
 }

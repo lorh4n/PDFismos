@@ -12,6 +12,7 @@ Rectangle {
     required property color documentColor
 
     signal documentRequested
+    signal documentCloseRequested
 
     topLeftRadius: root.cornerRadius
     topRightRadius: root.cornerRadius
@@ -98,6 +99,10 @@ Rectangle {
             Layout.alignment: Qt.AlignBottom
 
             onClicked: root.documentRequested()
+            onCloseRequested: {
+                console.log("Pedido pra fechar pdf");
+                root.documentCloseRequested();
+            }
         }
 
         Item {

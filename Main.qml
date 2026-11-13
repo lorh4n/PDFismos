@@ -89,6 +89,7 @@ ApplicationWindow {
 
         TitleBar {
             documentAvailable: pdfDocument.status === PdfDocument.Ready
+                   && pdfDocument.source.toString() !== ""
 
             // TODO: usar o Document TItle que é do metadado ou usar o nome do Documento salvo? Pensar sobre no futuro (pergurntar pros usuarios depois)
             documentTitle: library.fileName(pdfDocument.source)
@@ -102,6 +103,13 @@ ApplicationWindow {
                 window.showLibrary = true;
             }
             onDocumentRequested: window.showLibrary = false
+            onDocumentCloseRequested: {
+                window.restoringLastPage = true;
+                window.activeDocumentId = -1;
+                window.pendingPageIndex = -1;
+                pdfDocument.source = "";
+                window.showLibrary = true;
+            }
         }
 
         ToolBar {
